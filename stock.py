@@ -6,11 +6,9 @@ import csv
 import datetime
 from operator import itemgetter
 
-min_div_yield = 0
-max_div_yield = 10
-
 
 def parseFloat(num):
+    # in case of number is N/A
     try:
         num = float(num)
     except:
@@ -19,6 +17,7 @@ def parseFloat(num):
 
 
 def getPrice(symbol):
+    # get price and stats
     r = requests.get(
         'https://www.settrade.com/C04_01_stock_quote_p1.jsp?txtSymbol=%s&ssoPageId=9&selectPage=1' % (symbol))
     soup = BeautifulSoup(r.text, 'html.parser')
@@ -34,8 +33,23 @@ def getPrice(symbol):
     higtest_price_in52week = parseFloat(higtest_price_in52week)
     lowest_price_in52week = parseFloat(lowest_price_in52week)
 
-    div_yield = 0 if rate_return == 0 else (rate_return*100/price)
+    div_yield = 0.0 if rate_return == 0 else (rate_return*100/price)
     diffL52 = (price - lowest_price_in52week) * 100 / price
+
+    r = requests.get(
+        'https://www.settrade.com/C04_06_stock_financial_p1.jsp?txtSymbol=%s&ssoPageId=13&selectPage=6' % (symbol), headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
+
+    soup = BeautifulSoup(r.text, 'html5lib')
+    tables = soup.select('table.table-hover.table-info tbody')
+
+    account_table = tables[0].select('tr')
+    stats_table = tables[1].select('tr')
+
+    stat_price = [parseFloat(i.text.strip())
+                  for i in stats_table[0].select('td')][1:6]
+    stat_pe = [parseFloat(i.text.strip())
+               for i in stats_table[3].select('td')][1:6]
+
     return {
         'symbol': symbol,
         'div_yield': div_yield,
@@ -43,51 +57,43 @@ def getPrice(symbol):
         'rate_return': rate_return,
         'higtest_price_in52week': higtest_price_in52week,
         'lowest_price_in52week': lowest_price_in52week,
-        'diffL52': diffL52
+        'diffL52': diffL52,
+        'avg_pe': sum(stat_pe)/len(stat_pe),
+        'last_pe': stat_pe[-1]
     }
-    # print(symbol, "%.2f%%" % div_yield, price, rate_return, sep='\t|')
 
 
 def min_value(rank_norm, key):
+    # for normalize
     return min(map(itemgetter(key), rank_norm))
 
 
 def max_value(rank_norm, key):
+    # for normalize
     return max(map(itemgetter(key), rank_norm))
 
 
 def normalize_key(rank_norm, key):
+    # normalize by a key
     max_val = max_value(rank_norm, key)
     min_val = min_value(rank_norm, key)
     delta = max_val-min_val
     for d in rank_norm:
         d['n_'+key] = (d[key]-min_val)/delta
-    print(rank_norm)
     return rank_norm
 
 
 def normalize(lists, keys):
+    # normalize by keys
     for k in keys:
         lists = normalize_key(lists, k)
     return lists
 
 
-def getSET100():
+def getSETList(SET_LIST='100'):
+    # get set100,set50 list
     r = requests.get(
-        "https://marketdata.set.or.th/mkt/sectorquotation.do?sector=SET100&language=en&country=US")
-    soup = BeautifulSoup(r.text, 'html.parser')
-    set100_table = soup.select("table")[2]
-    lists = set100_table.select('tr')
-    lists.pop(0)
-    symbols = []
-    for l in lists:
-        symbols.append(l.select('td')[0].text.strip())
-    return symbols
-
-
-def getSET50():
-    r = requests.get(
-        "https://marketdata.set.or.th/mkt/sectorquotation.do?sector=SET50&language=en&country=US")
+        "https://marketdata.set.or.th/mkt/sectorquotation.do?sector=SET%s&language=en&country=US" % SET_LIST)
     soup = BeautifulSoup(r.text, 'html.parser')
     set100_table = soup.select("table")[2]
     lists = set100_table.select('tr')
@@ -99,6 +105,7 @@ def getSET50():
 
 
 def floatTo2Precise(lists):
+    # parse float to string with 2 precise
     for l in lists:
         for k in l.keys():
             if isinstance(l[k], float):
@@ -106,26 +113,36 @@ def floatTo2Precise(lists):
 
 
 def main():
-    symbol_list = getSET100()
-    # print(symbol_list)
-    symbol_list = ["JAS", "CPALL", "PTT", "PTTEP"]
-    print("SYMBOL", "DY", "PRICE", "D", "H52", "L52", sep='\t|')
+
+    symbol_list = getSETList(SET_LIST='100')
+    # symbol_list = ["JAS", "CPALL", "PTT", "PTTEP"]
+    # print("SYMBOL", "DY", "PRICE", "D", "H52", "L52", sep='\t|')
     display_list = []
     for sym in symbol_list:
         stock = getPrice(sym)
-        # print(stock['symbol'], stock['div_yield'],
-        #       stock['price'], stock['rate_return'], stock['higtest_price_in52week'], stock['lowest_price_in52week'], sep='\t|')
         display_list.append(stock)
 
-    normalize(display_list, ['div_yield', 'price'])
+    # key for normalize
+    normalize_keys = ['div_yield', 'price', 'avg_pe', 'last_pe']
+    normalize(display_list, normalize_keys)
 
-    display_list.sort(key=lambda i: i['div_yield'], reverse=True)
+    # calculate score from normalized key
+    for i in display_list:
+        i['score'] = 0.5*i['n_div_yield'] - 0.2 * \
+            i['n_avg_pe'] - 0.3 * i['n_last_pe']
+    # sort by score
+    display_list.sort(
+        key=lambda i: i['score'], reverse=True)
 
     display_csv = []
-    display_csv.append(["SYMBOL", "DY", "PRICE", "D", "H52", "L52", "diffL52"])
+    display_key = ["sym", "dy", "price", "punpon",
+                   "h52", "l52", "diff", 'avg_pe', 'last_pe', 'score']
+    display_csv.append(display_key)
 
     print("\n\n")
-    print("SYMBOL", "DY", "PRICE", "D", "H52", "L52", sep='\t|')
+    print('\t|'.join(display_key))
+
+    # write to csv
     floatTo2Precise(display_list)
     for stock in display_list:
         row = []
@@ -136,9 +153,11 @@ def main():
         row.append(stock['higtest_price_in52week'])
         row.append(stock['lowest_price_in52week'])
         row.append(stock['diffL52'])
+        row.append(stock['avg_pe'])
+        row.append(stock['last_pe'])
+        row.append(stock['score'])
         display_csv.append(row)
-        print(stock['symbol'], stock['div_yield'],
-              stock['price'], stock['rate_return'], stock['higtest_price_in52week'], stock['lowest_price_in52week'], sep='\t|')
+        print('\t|'.join(row))
 
     with open('result%s.csv' % datetime.datetime.now().strftime('%Y-%m-%d %H-%M'), 'w') as file:
         writer = csv.writer(file)
