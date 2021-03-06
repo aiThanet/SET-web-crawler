@@ -14,8 +14,8 @@ keyToDisplayName = {
     'symbol':'Sym', 
     'price':'Price', 
     'price_his':'PriceHis', 
-    'div_yield':'DY', 
-    'rate_return':'DY%', 
+    'precentageDV':'DY%', 
+    'DV':'DY', 
     'compare_his':'diffPrice/DY%', 
     'higtest_price_in52week':'H52', 
     'lowest_price_in52week':'L52', 
@@ -43,7 +43,7 @@ def getPrice(symbol,history_length = 10):
     price = parseFloat(soup.select(
         "div.round-border div h1")[0].text.strip())
 
-    rate_return = parseFloat(soup.select(
+    DV = parseFloat(soup.select(
         "div.row.content-box-stt div")[15].text.strip())
 
     higtest_price_in52week, lowest_price_in52week = soup.select(
@@ -52,7 +52,7 @@ def getPrice(symbol,history_length = 10):
     higtest_price_in52week = parseFloat(higtest_price_in52week)
     lowest_price_in52week = parseFloat(lowest_price_in52week)
 
-    div_yield = 0.0 if price == 0 else (rate_return*100/price)
+    precentageDV = 0.0 if price == 0 else (DV*100/price)
 
     r = requests.get(
         'https://www.settrade.com/C04_06_stock_financial_p1.jsp?txtSymbol=%s&ssoPageId=13&selectPage=6' % (symbol), headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
@@ -93,9 +93,9 @@ def getPrice(symbol,history_length = 10):
         'symbol': symbol,
         'price_his' : price_his[:history_length],
         'price': price,
-        'div_yield': div_yield,
-        'rate_return': rate_return,
-        'compare_his' : ((avg_price_his - price) / rate_return) if rate_return else 0,
+        'precentageDV': precentageDV,
+        'DV': "{:.4f}".format(DV),
+        'compare_his' : ((avg_price_his - price) / DV) if DV else 0,
         'higtest_price_in52week': higtest_price_in52week,
         'lowest_price_in52week': lowest_price_in52week,
         'avg_pe': sum(stat_pe)/len(stat_pe),
@@ -177,12 +177,12 @@ def main():
             display_list.append(stock)
 
     # key for normalize
-    normalize_keys = ['div_yield', 'price', 'avg_pe', 'last_pe','compare_his']
+    normalize_keys = ['precentageDV', 'price', 'avg_pe', 'last_pe','compare_his']
     normalize(display_list, normalize_keys)
 
     # calculate score from normalized key
     for i in display_list:
-        i['score'] = 0.5 * i['n_div_yield'] + 0.1 * int(i['isSET100']) + 2 * i['n_compare_his']
+        i['score'] = 0.5 * i['n_precentageDV'] + 0.1 * int(i['isSET100']) + 2 * i['n_compare_his']
     # sort by score
     display_list.sort(
         key=lambda i: i['score'], reverse=True)
