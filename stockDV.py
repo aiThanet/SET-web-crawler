@@ -75,7 +75,9 @@ def getPrice(symbol,history_length = 10):
     price_table = tables[0].select('tr')
     price_his = []
     for row in price_table:
-        price_his.append(parseFloat(row.select('td')[3].text.strip()))
+        _price = row.select('td')[3].text.strip()
+        if _price != "-" :
+            price_his.append(parseFloat(_price))
 
     avg_price_his = sum(price_his[:history_length]) / history_length
 
