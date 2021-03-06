@@ -22,7 +22,8 @@ keyToDisplayName = {
     'avg_pe':'AvgPE', 
     'last_pe':'PE', 
     'score':'Score',
-    'isSET100':'isSET100'
+    'isSET100':'isSET100',
+    'XD_date' : 'XD_date'
 }
 
 def parseFloat(num):
@@ -78,6 +79,16 @@ def getPrice(symbol,history_length = 10):
 
     avg_price_his = sum(price_his[:history_length]) / history_length
 
+    
+
+    r = requests.get(
+        'https://www.settrade.com/C04_07_stock_rightsandbenefit_p1.jsp?txtSymbol=%s&ssoPageId=15&selectPage=7' % (symbol), headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
+    soup = BeautifulSoup(r.text, 'html5lib')
+    divide_tables = soup.select('table.table-info.table-hover tbody')
+    first_row = divide_tables[0].select('tr')[0]
+    
+    XD_date = str(first_row.select('td')[0].text)
+
     return {
         'symbol': symbol,
         'price_his' : price_his[:history_length],
@@ -90,7 +101,8 @@ def getPrice(symbol,history_length = 10):
         'avg_pe': sum(stat_pe)/len(stat_pe),
         'last_pe': stat_pe[-1],
         'avg_price_his' : avg_price_his,
-        'isSET100' : symbol in SET100
+        'isSET100' : symbol in SET100,
+        'XD_date' : "'"+XD_date
     }
 
 
@@ -176,7 +188,8 @@ def main():
         key=lambda i: i['score'], reverse=True)
 
     display_csv = []
-    display_key = ["Sym", "Price", 'PriceHis', "DY%", "DY", "diffPrice/DY%", "H52", "L52", 'AvgPE', 'PE', 'Score','isSET100']
+    
+    display_key = [keyToDisplayName[k] for k in keyToDisplayName]
     display_csv.append(display_key)
 
     # print("\n\n")
