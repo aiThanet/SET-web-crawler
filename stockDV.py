@@ -35,7 +35,7 @@ def parseFloat(num):
     return num
 
 
-def getPrice(symbol,history_length = 10):
+def getPrice(symbol,history_length = 15):
     # get price and stats
     r = requests.get(
         'https://www.settrade.com/C04_01_stock_quote_p1.jsp?txtSymbol=%s&ssoPageId=9&selectPage=1' % (symbol))
@@ -52,7 +52,9 @@ def getPrice(symbol,history_length = 10):
     higtest_price_in52week = parseFloat(higtest_price_in52week)
     lowest_price_in52week = parseFloat(lowest_price_in52week)
 
-    precentageDV = 0.0 if price == 0 else (DV*100/price)
+    if price == 0:
+        raise Exception('Price is 0')
+    precentageDV = (DV*100/price)
 
     r = requests.get(
         'https://www.settrade.com/C04_06_stock_financial_p1.jsp?txtSymbol=%s&ssoPageId=13&selectPage=6' % (symbol), headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
@@ -79,8 +81,9 @@ def getPrice(symbol,history_length = 10):
         if _price != "-" :
             price_his.append(parseFloat(_price))
 
-    avg_price_his = sum(price_his[:history_length]) / history_length
-
+    avg_price_his = sum(price_his[:history_length]) / len(price_his[:history_length])
+    if len(price_his[:history_length]) == 0:
+        raise Exception('No Price History')
     
 
     r = requests.get(
@@ -174,9 +177,13 @@ def main():
     
     display_list = []
     for sym in tqdm(symbol_list):
-        stock = getPrice(sym)
-        if stock['price'] != 0:
-            display_list.append(stock)
+        try:
+            stock = getPrice(sym)
+            if stock['price'] != 0:
+                display_list.append(stock)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print(f"\n{sym}: {e}", exc_type, exc_tb.tb_lineno)
 
     # key for normalize
     normalize_keys = ['precentageDV', 'price', 'avg_pe', 'last_pe','compare_his']
@@ -184,7 +191,7 @@ def main():
 
     # calculate score from normalized key
     for i in display_list:
-        i['score'] = 0.5 * i['n_precentageDV'] + 0.1 * int(i['isSET100']) + 2 * i['n_compare_his']
+        i['score'] = 0.5 * i['n_precentageDV'] + 0.1 * int(i['isSET100']) + i['n_compare_his']
     # sort by score
     display_list.sort(
         key=lambda i: i['score'], reverse=True)
