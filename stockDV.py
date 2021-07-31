@@ -19,8 +19,8 @@ keyToDisplayName = {
     'compare_his':'diffPrice/DY%', 
     'higtest_price_in52week':'H52', 
     'lowest_price_in52week':'L52', 
-    'avg_pe':'AvgPE', 
-    'last_pe':'PE', 
+    # 'avg_pe':'AvgPE', 
+    # 'last_pe':'PE', 
     'score':'Score',
     'isSET100':'isSET100',
     'XD_date' : 'XD_date'
@@ -62,13 +62,13 @@ def getPrice(symbol,history_length = 15):
     soup = BeautifulSoup(r.text, 'html5lib')
     tables = soup.select('table.table-hover.table-info tbody')
 
-    account_table = tables[0].select('tr')
-    stats_table = tables[1].select('tr')
+    # account_table = tables[0].select('tr')
+    # stats_table = tables[1].select('tr')
 
-    stat_price = [parseFloat(i.text.strip())
-                  for i in stats_table[0].select('td')][1:6]
-    stat_pe = [parseFloat(i.text.strip())
-               for i in stats_table[3].select('td')][1:6]
+    # stat_price = [parseFloat(i.text.strip())
+    #               for i in stats_table[0].select('td')][1:6]
+    # stat_pe = [parseFloat(i.text.strip())
+    #            for i in stats_table[3].select('td')][1:6]
 
     r = requests.get(
         'https://www.settrade.com/C04_02_stock_historical_p1.jsp?txtSymbol=%s&ssoPageId=9&selectPage=2' % (symbol), headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
@@ -103,8 +103,8 @@ def getPrice(symbol,history_length = 15):
         'compare_his' : ((avg_price_his - price) / DV) if DV else 0,
         'higtest_price_in52week': higtest_price_in52week,
         'lowest_price_in52week': lowest_price_in52week,
-        'avg_pe': sum(stat_pe)/len(stat_pe),
-        'last_pe': stat_pe[-1],
+        # 'avg_pe': sum(stat_pe)/len(stat_pe),
+        # 'last_pe': stat_pe[-1],
         'avg_price_his' : avg_price_his,
         'isSET100' : symbol in SET100,
         'XD_date' : "'"+XD_date
@@ -173,7 +173,7 @@ def floatTo2Precise(lists):
 def main():
 
     symbol_list = read_stock("./STOCK_LIST")
-    # SET100 = getSETList(SET_LIST='100')
+    # symbol_list = getSETList(SET_LIST='100')
     
     display_list = []
     for sym in tqdm(symbol_list):
@@ -186,7 +186,7 @@ def main():
             print(f"\n{sym}: {e}", exc_type, exc_tb.tb_lineno)
 
     # key for normalize
-    normalize_keys = ['precentageDV', 'price', 'avg_pe', 'last_pe','compare_his']
+    normalize_keys = ['precentageDV', 'price','compare_his']
     normalize(display_list, normalize_keys)
 
     # calculate score from normalized key
