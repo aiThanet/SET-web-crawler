@@ -42,7 +42,7 @@ class Strategy:
 
     def calculate_score(self, stock_infos):
         for stock in stock_infos:
-            stock['คะแนน'] = 0.5 * stock['n_%ปันผล'] + (0.1 * int(stock['SET100'])) + stock['เปรียบเทียบ ปันผล/ราคาย้อนหลัง']
+            stock['คะแนน'] = 0.5 * stock['n_%ปันผล'] + (0.1 * int(stock['SET100'])) + stock['n_เปรียบเทียบ ปันผล/ราคาย้อนหลัง']
         stock_infos.sort(key=lambda stock: stock['คะแนน'], reverse=True)
         stock['คะแนน'] = "{:.4f}".format(stock['คะแนน'])
 
