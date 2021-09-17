@@ -55,7 +55,7 @@ class Strategy:
             output.append(row)
         # print('\t\t|'.join([str(r) for r in row]))
 
-        with open('result%s.csv' % datetime.now().strftime('%Y-%m-%d %H-%M'), 'w') as file:
+        with open('%s-result%s.csv' % (self._remark, datetime.now().strftime('%Y-%m-%d %H-%M')), 'w') as file:
             writer = csv.writer(file)
             writer.writerows(output)
 
