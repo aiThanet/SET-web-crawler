@@ -11,7 +11,7 @@ urllib3.disable_warnings()
 class AsyncBrowser:
     def __init__(self, **kwargs):
         self._user_agent = kwargs.get('user_agent', self._user_agent())
-        self._timeout = kwargs.get('timeout', 5)
+        self._timeout = kwargs.get('timeout', 100)
         self._debug = kwargs.get('debug', False)
 
     def build_requests(self, **kwargs):

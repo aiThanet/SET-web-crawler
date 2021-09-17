@@ -32,9 +32,7 @@ class Benefit:
                     remark = info[1].strip()
                     if remark in self._remarks:
                         benefit_list.append([stock_name, remark])
-                result[date] = benefit_list
-        
-        all_result[f'{month}-{year}'] = result
+                all_result[f'{date}-{month}-{year}'] = benefit_list
 
     def get_month_year(self, month_info):
         month, year = month_info.split()
@@ -44,23 +42,13 @@ class Benefit:
         if(self._debug):
             print(text)
 
-    async def get_all_benefit(self):
+    def get_all_benefit(self):
         result = {}
         loop = asyncio.get_event_loop()
         coroutines = [self.get_benefit(result, i) for i in range(self._max_index)]
-        await asyncio.gather(*coroutines)
+        loop.run_until_complete(asyncio.gather(*coroutines))
 
         return result
 
-
-
-# async def get_benefit():
-#         global re
-#         b = AsyncBrowser(debug=False)
-#         payload = { 'url': f'https://www.set.or.th/set/xcalendar.do?eventType=&index=1&language=th&country=TH' }
-#         response = await b.get(**payload)
-#         re = response
-#         return response
-# asyncio.run(get_benefit())
 
 

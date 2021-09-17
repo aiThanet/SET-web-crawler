@@ -1,4 +1,5 @@
 import requests
+from operator import itemgetter
 from bs4 import BeautifulSoup
 
 def parseFloat(num):
@@ -47,7 +48,38 @@ stock_info_tab_urls = {
     "Board of Directors": 4,
     "Major Shareholders": 5,
     "Financial Stmt.": 6,
-    "Right & Benefits": 7,
+    "Right & Benefits": "https://www.settrade.com/C04_07_stock_rightsandbenefit_p1.jsp?txtSymbol=###&subPage=a&selectPage=7",
     "Sector Comparison": 8,
     "Company News": 9
 }
+
+def min_value(rank_norm, key):
+    # for normalize
+    return min(map(itemgetter(key), rank_norm))
+
+def max_value(rank_norm, key):
+    # for normalize
+    return max(map(itemgetter(key), rank_norm))
+
+def normalize_key(rank_norm, key):
+    # normalize by a key
+    max_val = max_value(rank_norm, key)
+    min_val = min_value(rank_norm, key)
+    delta = max_val-min_val
+    for d in rank_norm:
+        d['n_'+key] = (d[key]-min_val)/delta
+    return rank_norm
+
+def normalize(lists, keys):
+    # normalize by keys
+    for k in keys:
+        lists = normalize_key(lists, k)
+    return lists
+
+def floatTo2Precise(lists):
+    # parse float to string with 2 precise
+    for l in lists:
+        for k in l.keys():
+            if isinstance(l[k], float):
+                l[k] = "%.2f" % l[k]
+
