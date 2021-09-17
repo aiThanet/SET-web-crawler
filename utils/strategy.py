@@ -1,7 +1,7 @@
 from datetime import datetime
 from utils.benefit import Benefit
 from utils.stock import Stock
-from utils.tool import getSETList, normalize
+from utils.tool import getSETList, normalize, floatTo2Precise
 import asyncio
 import uvloop
 import csv
@@ -49,6 +49,7 @@ class Strategy:
     def generate_report(self, stock_infos):
         topics = ['symbol','ราคาล่าสุด','เฉลี่ยราคาย้อนหลัง30วัน','ราคาเฉลี่ยย้อนหลัง30วัน','ปันผล','%ปันผล','เปรียบเทียบ ปันผล/ราคาย้อนหลัง','คะแนน','ราคาสูงสุด/ต่ำสุดในรอบ 52 สัปดาห์','SET100','วันที่ขึ้นเครื่องหมายล่าสุด']
         output = [topics]
+        floatTo2Precise(stock_infos)
         for stock in stock_infos:
             row = [stock[topic] for topic in topics]
             output.append(row)

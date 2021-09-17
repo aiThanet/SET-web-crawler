@@ -52,8 +52,8 @@ class Stock:
             'ราคาเฉลี่ยย้อนหลัง30วัน' : price_his,
         
             'ปันผล': "{:.4f}".format(last_dividend),
-            '%ปันผล': "{:.2f}".format(percentage_last_dividend),
-            'เปรียบเทียบ ปันผล/ราคาย้อนหลัง' : "{:.2f}".format((avg_price_his - last_price) / last_dividend) if last_dividend else 0.0,
+            '%ปันผล': percentage_last_dividend,
+            'เปรียบเทียบ ปันผล/ราคาย้อนหลัง' : ((avg_price_his - last_price) / last_dividend) if last_dividend else 0.0,
             'ราคาสูงสุด/ต่ำสุดในรอบ 52 สัปดาห์': self._stock_stats['ราคาสูงสุด/ต่ำสุดในรอบ 52 สัปดาห์ *,**'],
            
             'SET100' : self._symbol in self._top_list,
