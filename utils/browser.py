@@ -37,8 +37,8 @@ class AsyncBrowser:
 
     async def get(self, **kwargs):
         payload = self.build_requests(**kwargs)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(**payload) as response:
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            async with session.get(**payload, ssl=False) as response:
                 text = await response.text()
                 soup = BeautifulSoup(text, 'html5lib')
                 # self.print_debug(soup.prettify())
@@ -46,8 +46,8 @@ class AsyncBrowser:
 
     async def post(self, **kwargs):
         payload = self.build_requests(**kwargs)
-        async with aiohttp.ClientSession() as session:
-            async with session.post(**payload) as response:
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            async with session.post(**payload, ssl=False) as response:
                 text = await response.text()
                 soup = BeautifulSoup(text, 'html5lib')
                 # self.print_debug(soup.prettify())

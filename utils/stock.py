@@ -11,6 +11,9 @@ class Stock:
         self._max_history = max_history
         self._debug = debug
         self._browser = AsyncBrowser(debug=self._debug)
+        
+    def __str__(self):
+        return f"{self._stock_stats}"
 
     def get_all_info(self):
         task1 = self.get_stock_quote()

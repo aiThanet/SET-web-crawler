@@ -21,8 +21,18 @@ class Strategy:
     def date_filter(self, date):
         now = datetime.strptime(date, "%d-%m-%Y")
         return now >= self._start_date and now <= self._end_date
+    
+    def get_info_by_list(self, stock_list):
+        coroutines = []
+        for symbol in stock_list:
+            stock = Stock(symbol=symbol, top_list = self._top_set)
+            coroutines.append(stock.f_get_all_info())
+            self._stock_list[symbol] = stock
+        
+        asyncio.run(self.run_task(coroutines))
+            
 
-    def get_info(self):
+    def get_info_by_benefit_list(self):
         coroutines = []
         fliter_benefit_date = filter(self.date_filter, self._benefit_list.keys())
 
@@ -58,10 +68,23 @@ class Strategy:
         with open('%s-result%s.csv' % (self._remark, datetime.now().strftime('%Y-%m-%d %H-%M')), 'w') as file:
             writer = csv.writer(file)
             writer.writerows(output)
+            
+    def generate_my_list(self, stock_list):
+        self.get_info_by_list(stock_list)
+        stock_infos = []
+        
+        for symbol in stock_list:
+            stock_infos.append(self._stock_list[symbol].get_template())
+            
+        normalize_keys = ['ราคาล่าสุด', '%ปันผล','เปรียบเทียบ ปันผล/ราคาย้อนหลัง']
+        normalize(stock_infos, normalize_keys)
+
+        self.calculate_score(stock_infos)
+        self.generate_report(stock_infos)
+        
 
     def generate(self):
-        self.get_info()
-
+        self.get_info_by_benefit_list()
         stock_infos = []
 
         for symbol in self._stock_list:
